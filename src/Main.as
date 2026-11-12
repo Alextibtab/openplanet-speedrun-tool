@@ -71,11 +71,15 @@ void waitForLiveSplitData()
         // Get the data from the LiveSplit Server
         if (g_LiveSplit !is null && g_LiveSplit.connected)
         {
-            chunk = g_LiveSplit.sock.ReadRaw(1024);
-            if (chunk.Length > 0) {
-                chunk = chunk.Trim();
-                g_LiveSplit.lastResult = chunk;
-                trace("Data from LiveSplit: " + chunk);
+            // ReadRaw() hands back a buffer of the requested size even when nothing
+            // has arrived, so only read the bytes that are actually waiting.
+            int available = g_LiveSplit.sock.Available();
+            if (available > 0) {
+                chunk = g_LiveSplit.sock.ReadRaw(available).Trim();
+                if (chunk.Length > 0) {
+                    g_LiveSplit.lastResult = chunk;
+                    trace("Data from LiveSplit: " + chunk);
+                }
                 chunk = "";
             }
         }
