@@ -5,6 +5,8 @@ class CampaignListSWTab : SWTab
     uint request = 50;
     uint pageSize = 50;
     bool moreavailable = true;
+    uint clearCount = 0;
+    uint64 retryAfter = 0;
 
     bool ShowLoadMore() { return true; }
 
@@ -15,12 +17,23 @@ class CampaignListSWTab : SWTab
         campaigns.RemoveRange(0, campaigns.Length);
         moreavailable = true;
         request = pageSize;
+        clearCount++;
+        retryAfter = 0;
     }
 
     void Load() override {
-        if (moreavailable && campaigns.Length < request) {
-            LoadCampaigns(pageSize, campaigns.Length);
+        if (moreavailable && campaigns.Length < request && Time::Now >= retryAfter) {
+            uint clearsBefore = clearCount;
+            uint countBefore = campaigns.Length;
+            LoadCampaigns(pageSize, countBefore);
             moreavailable = (campaigns.Length % pageSize) == 0;
+
+            // Load() runs every frame. A request that adds nothing (empty or failed
+            // result) left moreavailable true, so it was re-sent in a tight loop.
+            // Wait before retrying, unless the list was cleared while loading.
+            if (clearsBefore == clearCount && campaigns.Length <= countBefore) {
+                retryAfter = Time::Now + 5000;
+            }
         }
     }
 
