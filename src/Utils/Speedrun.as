@@ -21,9 +21,6 @@ class Speedrun
 
     array<MapInfo@> mapPlaylist;
 
-    CGameDataFileManagerScript@ gameDataFileManager;
-    CSmArenaRulesMode@ playgroundScript;
-
     PlayerState::sTMData@ TMData;
 
     void Update(float dt)
@@ -307,8 +304,10 @@ class Speedrun
 
     void CreateReplay()
     {
-        @gameDataFileManager = TryGetDataFileMgr();
-        @playgroundScript = TryGetPlaygroundScript();
+        // Keep these local: they belong to the current map's playground, and holding
+        // them on g_speedrun kept references to it alive after the map was unloaded.
+        CGameDataFileManagerScript@ gameDataFileManager = TryGetDataFileMgr();
+        CSmArenaRulesMode@ playgroundScript = TryGetPlaygroundScript();
         CTrackMania@ app = cast<CTrackMania>(GetApp());
         CGamePlayground@ GamePlayground = cast<CGamePlayground>(app.CurrentPlayground);
         if (app.RootMap !is null)
